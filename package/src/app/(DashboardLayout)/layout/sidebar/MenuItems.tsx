@@ -14,6 +14,12 @@ const Menuitems = [
   },
   {
     id: uniqueId(),
+    title: "Participants",
+    icon: IconDashboard,
+    href: "/executive-summary/participants",
+  },
+  {
+    id: uniqueId(),
     title: "Summary",
     icon: IconDashboard,
     href: "/executive-summary/summary",
