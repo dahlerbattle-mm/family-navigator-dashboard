@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    build:
+      context: ./package  # Point to the directory where package.json is located
     ports:
       - '3000:3000'
     environment:
@@ -11,5 +12,20 @@ services:
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY} # only if needed
     volumes:
-      - .:/app
+      - ./package:/app  # Map the package directory to /app in the container
       - /app/node_modules
+    depends_on:
+      - etl
+
+  etl:
+    build:
+      context: ./api/etl  # Path to the ETL directory containing main.py and Dockerfile for FastAPI
+    ports:
+      - '8000:8000'
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY} # if needed for server-side access
+    volumes:
+      - ./api/etl:/app  # Map the ETL service's code directory
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
