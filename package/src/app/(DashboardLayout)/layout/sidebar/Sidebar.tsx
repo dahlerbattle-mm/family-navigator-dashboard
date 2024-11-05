@@ -16,7 +16,7 @@ const MSidebar = ({
 }: ItemType) => {
   const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
 
-  const sidebarWidth = "270px";
+  const sidebarWidth = "350px";
 
   // Custom CSS for short scrollbar
   const scrollbarStyles = {
@@ -62,7 +62,7 @@ const MSidebar = ({
             }}
           >
             <Sidebar
-              width={'270px'}
+              width={'350px'}
               collapsewidth="80px"
               open={isSidebarOpen}
               themeColor="#5d87ff"
@@ -72,7 +72,16 @@ const MSidebar = ({
               {/* ------------------------------------------- */}
               {/* Logo */}
               {/* ------------------------------------------- */}
-              <Logo img="/images/logos/dark-logo.svg" />
+              <Logo
+                img="/images/logos/family-navigator-logo-black.svg"
+                alt="logo"
+                style={{
+                  maxWidth: '100%',   // Ensures the logo does not exceed the container's width
+                  maxHeight: '80px',  // Sets the maximum height (adjust as needed)
+                  width: 'auto',      // Keeps the aspect ratio
+                  height: 'auto',
+                }}
+              />
               <Box>
                 {/* ------------------------------------------- */}
                 {/* Sidebar Items */}
@@ -105,7 +114,7 @@ const MSidebar = ({
       {/* ------------------------------------------- */}
       <Box px={2}>
         <Sidebar
-          width={'270px'}
+          width={'350px'}
           collapsewidth="80px"
           isCollapse={false}
           mode="light"
@@ -117,7 +126,16 @@ const MSidebar = ({
           {/* ------------------------------------------- */}
           {/* Logo */}
           {/* ------------------------------------------- */}
-          <Logo img="/images/logos/dark-logo.svg" />
+          <Logo
+            img="/images/logos/family-navigator-logo-black.svg"
+            alt="logo"
+            style={{
+              maxWidth: '100%',   // Ensures the logo does not exceed the container's width
+              maxHeight: '80px',  // Sets the maximum height (adjust as needed)
+              width: 'auto',      // Keeps the aspect ratio
+              height: 'auto',
+            }}
+          />
           {/* ------------------------------------------- */}
           {/* Sidebar Items */}
           {/* ------------------------------------------- */}
