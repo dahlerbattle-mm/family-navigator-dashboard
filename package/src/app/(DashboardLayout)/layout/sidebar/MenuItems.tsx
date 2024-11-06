@@ -120,13 +120,13 @@ const Menuitems = [
   },
   {
     navlabel: true,
-    subheader: "CSV Upload",
+    subheader: "Getting Started",
   },
   {
     id: uniqueId(),
-    title: "CSV Upload",
+    title: "Getting Started",
     icon: IconUpload,
-    href: "/csv-upload",
+    href: "/getting-started",
   },
 ];
 
