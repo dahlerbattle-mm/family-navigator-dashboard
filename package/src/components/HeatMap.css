@@ -1,0 +1,48 @@
+/* Basic styling for the heatmap container */
+.heatmapContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-x: auto;
+  }
+  
+  /* Styling for the heatmap table */
+  .heatmapTable {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 800px;
+  }
+  
+  /* Style for the table headers */
+  .header {
+    font-weight: bold;
+    text-align: center;
+    padding: 8px;
+    border: 1px solid #ddd;
+    background-color: #f7f7f7;
+  }
+  
+  /* Style for each table cell */
+  .cell {
+    text-align: center;
+    padding: 12px;
+    border: 1px solid #ddd;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  /* Color gradient for heatmap cells from green to red */
+  .cell[data-value='1'] { background-color: #006400; color: white; } /* Dark Green */
+  .cell[data-value='2'] { background-color: #228B22; color: white; } /* Forest Green */
+  .cell[data-value='3'] { background-color: #32CD32; color: white; } /* Lime Green */
+  .cell[data-value='4'] { background-color: #7CFC00; color: white; } /* Lawn Green */
+  .cell[data-value='5'] { background-color: #ADFF2F; color: black; } /* Green Yellow */
+  .cell[data-value='6'] { background-color: #FFFF00; color: black; } /* Yellow */
+  .cell[data-value='7'] { background-color: #FFD700; color: black; } /* Gold */
+  .cell[data-value='8'] { background-color: #FFA500; color: black; } /* Orange */
+  .cell[data-value='9'] { background-color: #FF8C00; color: white; } /* Dark Orange */
+  .cell[data-value='10'] { background-color: #FF4500; color: white; } /* Orange Red */
+  .cell[data-value='11'] { background-color: #FF0000; color: white; } /* Red */
+  .cell[data-value='12'] { background-color: #8B0000; color: white; } /* Dark Red */
+  
