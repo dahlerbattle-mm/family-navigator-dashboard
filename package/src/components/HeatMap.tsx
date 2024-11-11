@@ -1,6 +1,6 @@
 // src/components/Heatmap.tsx
 import React from 'react';
-import styles from './Heatmap.module.css';
+import styles from './HeatMap.module.css';
 
 interface HeatmapProps {
   data: number[][];
