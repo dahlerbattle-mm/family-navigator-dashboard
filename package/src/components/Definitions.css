@@ -1,0 +1,53 @@
+.definitionContainer {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  
+  .pageTitle {
+    font-size: 2rem;
+    color: #ffffff;
+    background-color: #4caf50;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .sectionsWrapper {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  
+  .section {
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    flex: 1;
+    max-width: 30%;
+    min-width: 250px;
+    text-align: left;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .sectionTitle {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .sectionSubtitle {
+    font-size: 1.2rem;
+    color: #666;
+    font-style: italic;
+    margin-bottom: 15px;
+  }
+  
+  .sectionDefinition {
+    font-size: 1rem;
+    color: #444;
+    line-height: 1.5;
+  }
+  

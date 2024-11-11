@@ -5,9 +5,9 @@ import { Box } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import Header from '@/app/(DashboardLayout)/layout/header/Header';
 import Sidebar from '@/app/(DashboardLayout)/layout/sidebar/Sidebar';
-import CSVUploadContent from '@/components/CSVUploadContent';
+import ConstituenciesChart from '@/components/ConstituenciesChart'; // Import ConstituenciesChart
 
-const CSVUpload = () => {
+const ConstituenciesPage = () => {
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
@@ -27,10 +27,11 @@ const CSVUpload = () => {
           onSidebarClose={handleSidebarClose}
           isSidebarOpen={isSidebarOpen}
         />
-        {/* Main content */}
+
+        {/* Main content area */}
         <Box sx={{ flexGrow: 1, padding: 3 }}>
-          <PageContainer title="CSV Upload" description="Upload your CSV file here">
-            <CSVUploadContent />
+          <PageContainer title="Constituencies Chart" description="This page displays the constituencies chart">
+            <ConstituenciesChart />
           </PageContainer>
         </Box>
       </Box>
@@ -38,4 +39,4 @@ const CSVUpload = () => {
   );
 };
 
-export default CSVUpload;
+export default ConstituenciesPage;

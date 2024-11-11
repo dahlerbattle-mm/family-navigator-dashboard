@@ -21,8 +21,8 @@ interface CompetencyChartProps {
 const CompetencyChart: React.FC<CompetencyChartProps> = ({ sections }) => {
   // Function to determine background color based on competency value
   const getColor = (value: number): string => {
-    if (value > 5.33) return "#8BC34A"; // Green for strong competency
-    if (value < 4.55) return "#E57373"; // Red for weak competency
+    if (value > 5.249) return "#8BC34A"; // Green for strong competency
+    if (value < 3.251) return "#E57373"; // Red for weak competency
     return "#FFF176"; // Yellow for medium competency
   };
 
