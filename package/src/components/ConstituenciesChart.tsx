@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './ConstituenciesChart.module.css';
+import styles from './ConstituenciesChart.module.css';
 
 type Constituency = {
   name: string;
@@ -32,9 +32,9 @@ const ConstituenciesChart: React.FC = () => {
   }, []);
 
   return (
-    <div className="constituencies-chart">
+    <div className={styles.constituenciesChart}>
       <h2>Constituencies Chart</h2>
-      <table>
+      <table className={styles.constituenciesTable}>
         <thead>
           <tr>
             <th>Constituency</th>
@@ -52,7 +52,7 @@ const ConstituenciesChart: React.FC = () => {
               <td>{constituency.numOfMembers}</td>
             </tr>
           ))}
-          <tr className="total-row">
+          <tr className={styles.totalRow}>
             <td colSpan={3}><strong>Total</strong></td>
             <td><strong>{totalMembers}</strong></td>
           </tr>
