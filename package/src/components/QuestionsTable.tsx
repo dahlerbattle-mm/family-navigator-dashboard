@@ -1,5 +1,5 @@
 import React from "react";
-import "./QuestionsTable.css"; // Import the integrated CSS file
+import "./QuestionsTable.module.css"; // Import the integrated CSS file
 
 // Types for data
 type DistributionData = {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './ConstituenciesChart.css';
+import './ConstituenciesChart.module.css';
 
 type Constituency = {
   name: string;

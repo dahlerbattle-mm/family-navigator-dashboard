@@ -1,5 +1,5 @@
 import React from "react";
-import "./CompetencyChart.css";
+import "./CompetencyChart.module.css";
 
 // Define the structure for each competency section
 interface Competency {

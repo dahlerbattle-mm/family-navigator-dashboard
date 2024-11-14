@@ -1,5 +1,5 @@
 import React from "react";
-import "./SubSectionTable.css"; // Import the CSS file
+import "./SubSectionTable.module.css"; // Import the CSS file
 
 type ConstituencyData = {
   name: string;
