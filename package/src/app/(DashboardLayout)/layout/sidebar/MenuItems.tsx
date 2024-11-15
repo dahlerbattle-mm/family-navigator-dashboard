@@ -125,8 +125,14 @@ const Menuitems = [
   {
     id: uniqueId(),
     title: "Getting Started",
-    icon: IconUpload,
+    icon: IconDashboard,
     href: "/getting-started",
+  },
+  {
+    id: uniqueId(),
+    title: "Upload Answers",
+    icon: IconUpload,
+    href: "/upload",
   },
 ];
 

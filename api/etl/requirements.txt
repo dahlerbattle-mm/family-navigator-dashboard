@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-supabase-py==0.0.2
-python-dotenv
-supabase-py
-
-
