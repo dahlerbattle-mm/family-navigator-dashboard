@@ -1,0 +1,35 @@
+.questions-table {
+    margin: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  th,
+  td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+  }
+  
+  th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  .distribution-bars {
+    display: flex;
+    align-items: center;
+    height: 20px;
+  }
+  
+  .bar {
+    height: 10px;
+    border-radius: 3px;
+    margin: 0 2px;
+  }
+  
