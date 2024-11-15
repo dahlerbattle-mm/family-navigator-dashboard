@@ -1,5 +1,5 @@
 import React from "react";
-import "./QuestionsTable.module.css"; // Import the integrated CSS file
+import styles from "./QuestionsTable.module.css"; // Import the CSS module
 
 // Types for data
 type DistributionData = {
@@ -19,26 +19,26 @@ interface QuestionsTableProps {
 
 const QuestionsTable: React.FC<QuestionsTableProps> = ({ data }) => {
   return (
-    <div className="questions-table">
-      <table>
+    <div className={styles.questionsTable}>
+      <table className={styles.table}>
         <thead>
           <tr>
-            <th>Question</th>
-            <th>Average</th>
-            <th>Distribution</th>
+            <th className={styles.tableHeader}>Question</th>
+            <th className={styles.tableHeader}>Average</th>
+            <th className={styles.tableHeader}>Distribution</th>
           </tr>
         </thead>
         <tbody>
           {data.map((questionData, index) => (
             <tr key={index}>
-              <td>{questionData.question}</td>
-              <td>{questionData.average.toFixed(2)}</td>
-              <td>
-                <div className="distribution-bars">
+              <td className={styles.tableCell}>{questionData.question}</td>
+              <td className={styles.tableCell}>{questionData.average.toFixed(2)}</td>
+              <td className={styles.tableCell}>
+                <div className={styles.distributionBars}>
                   {questionData.distributions.map((distribution, distIndex) => (
                     <div
                       key={distIndex}
-                      className="bar"
+                      className={styles.bar}
                       style={{
                         width: `${distribution.value * 10}px`,
                         backgroundColor: "orange",

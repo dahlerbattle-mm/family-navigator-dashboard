@@ -1,5 +1,5 @@
 import React from "react";
-import "./SubSectionTable.module.css"; // Import the CSS file
+import styles from "./SubSectionTable.module.css"; // Import the CSS module
 
 type ConstituencyData = {
   name: string;
@@ -25,31 +25,33 @@ interface SubSectionTableProps {
 
 const SubSectionTable: React.FC<SubSectionTableProps> = ({ data }) => {
   return (
-    <div className="sub-section-table">
+    <div className={styles.subSectionTable}>
       {data.map((sectionData, sectionIndex) => (
-        <div key={sectionIndex} className="section-container">
-          <h2>{sectionData.section}</h2>
+        <div key={sectionIndex} className={styles.sectionContainer}>
+          <h2 className={styles.sectionTitle}>{sectionData.section}</h2>
           {sectionData.categories.map((categoryData, categoryIndex) => (
-            <div key={categoryIndex} className="category-container">
-              <h3>{categoryData.category}</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Constituency</th>
-                    <th>Avg.</th>
-                    <th>Rank</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {categoryData.constituencies.map((constituency, constituencyIndex) => (
-                    <tr key={constituencyIndex}>
-                      <td>{constituency.name}</td>
-                      <td>{constituency.avg.toFixed(2)}</td>
-                      <td>{constituency.rank}</td>
+            <div key={categoryIndex} className={styles.categoryContainer}>
+              <h3 className={styles.categoryTitle}>{categoryData.category}</h3>
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th className={styles.tableHeader}>Constituency</th>
+                      <th className={styles.tableHeader}>Avg.</th>
+                      <th className={styles.tableHeader}>Rank</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {categoryData.constituencies.map((constituency, constituencyIndex) => (
+                      <tr key={constituencyIndex} className={styles.tableRow}>
+                        <td className={styles.tableCell}>{constituency.name}</td>
+                        <td className={styles.tableCell}>{constituency.avg.toFixed(2)}</td>
+                        <td className={styles.tableCell}>{constituency.rank}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ))}
         </div>
