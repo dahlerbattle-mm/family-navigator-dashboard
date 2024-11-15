@@ -1,61 +1,62 @@
-# biz_logic.py
 import json
 import csv
 import io
-import os
-from supabase import create_client, Client
-from dotenv import load_dotenv
+from supabase import create_client
 from fastapi import HTTPException
+import os
 
-# Load environment variables
-load_dotenv()
-
-# Supabase connection settings from environment variables
+# Supabase connection settings
 supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 supabase_key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-supabase: Client = create_client(supabase_url, supabase_key)
+supabase = create_client(supabase_url, supabase_key)
+
 
 def get_csv_from_supabase(organization_id: str):
-    """Retrieve CSV data from Supabase for a specific organization."""
+    """
+    Retrieve the raw CSV payload for a specific organization from Supabase.
+    """
     response = supabase.table("dashboard_data").select("raw_payload").eq("organization_id", organization_id).execute()
-    
+
     if response.status_code == 200 and response.data:
-        csv_data = response.data[0]['raw_payload']
-        return csv_data
+        return response.data[0]['raw_payload']
     else:
-        print("Failed to retrieve data from Supabase for organization:", organization_id)
-        return None
+        raise HTTPException(status_code=404, detail=f"No CSV data found for organization ID: {organization_id}")
+
 
 def save_to_supabase(organization_id: str, df_by_cat: dict, df_by_subcat: dict, qanda_data: list):
-    """Save processed data to Supabase for a specific organization."""
+    """
+    Save processed data to Supabase for a specific organization.
+    """
     response = supabase.table("dashboard_data").update({
         "cp_by_cat": json.dumps(df_by_cat),
         "cp_by_subcat": json.dumps(df_by_subcat),
         "cp_by_q": json.dumps(qanda_data)
     }).eq("organization_id", organization_id).execute()
 
-    if response.status_code == 200:
-        print("Data successfully saved to Supabase for organization:", organization_id)
-    else:
-        print("Failed to save data to Supabase for organization:", organization_id)
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail=f"Failed to save processed data for organization ID: {organization_id}")
+
 
 def run_etl_process(organization_id: str):
-    """Run the ETL process and return data."""
+    """
+    Run the ETL process:
+    1. Fetch raw payload (CSV) from Supabase.
+    2. Process and transform the data.
+    3. Save processed data back to Supabase.
+    """
     try:
-        # Step 1: Retrieve CSV data
+        # Step 1: Retrieve raw CSV payload from Supabase
         csv_data = get_csv_from_supabase(organization_id)
-        if not csv_data:
-            raise HTTPException(status_code=404, detail="No data retrieved from Supabase for the specified organization")
 
-        # Convert CSV to JSON
+        # Convert raw CSV string into a list of dictionaries
         csv_reader = csv.DictReader(io.StringIO(csv_data))
         answers_data = list(csv_reader)
 
-        # Step 2: Load questions JSON file
+        # Step 2: Load questions from JSON file
         with open('FamNavQs.json', 'r', encoding='utf-8') as f:
             questions_data = json.load(f)
 
-        # Initialize qanda_data structure
+        # Step 3: Initialize Q&A data structure
         qanda_data = []
         for line in questions_data:
             question_number = line['q#']
@@ -70,7 +71,7 @@ def run_etl_process(organization_id: str):
                 'entities': {'total': {'count': 0.0, 'sum': 0.0, 'average': 0.0, 'rank': 0.0}}
             })
 
-        # Process answers data to aggregate by family and question
+        # Step 4: Aggregate data by family and question
         data_dictAs = {}
         for line in answers_data:
             family = line['Date of Last Access']
@@ -84,13 +85,13 @@ def run_etl_process(organization_id: str):
                     data_dictAs[family][key]['count'] += 1
                     data_dictAs[family][key]['sum'] += answer
 
-        # Calculate averages for each family and question
+        # Calculate averages
         for family, questions in data_dictAs.items():
             for question, stats in questions.items():
                 if stats['count'] > 0:
                     stats['average'] = stats['sum'] / stats['count']
 
-        # Integrate answers into qanda_data
+        # Integrate aggregated answers into Q&A data
         for question in qanda_data:
             q_num = question['q#']
             for family, answers in data_dictAs.items():
@@ -102,7 +103,7 @@ def run_etl_process(organization_id: str):
             if question['entities']['total']['count'] > 0:
                 question['entities']['total']['average'] = question['entities']['total']['sum'] / question['entities']['total']['count']
 
-        # Process aggregated data by category and subcategory
+        # Step 5: Aggregate data by category and subcategory
         df_by_cat, df_by_subcat = {}, {}
         for question in qanda_data:
             category = question['cat']
@@ -123,7 +124,7 @@ def run_etl_process(organization_id: str):
                     df_by_subcat[subcategory][entity]['count'] += stats['count']
                     df_by_subcat[subcategory][entity]['sum'] += stats['sum']
 
-        # Calculate averages
+        # Calculate averages for category and subcategory data
         for category, entities in df_by_cat.items():
             for entity, stats in entities.items():
                 if stats['count'] > 0:
@@ -134,10 +135,10 @@ def run_etl_process(organization_id: str):
                 if entity != 'cat' and stats['count'] > 0:
                     stats['average'] = stats['sum'] / stats['count']
 
-        # Save final data to Supabase
+        # Step 6: Save processed data back to Supabase
         save_to_supabase(organization_id, df_by_cat, df_by_subcat, qanda_data)
-        
+
         return {"status": "ETL completed and data saved"}
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
