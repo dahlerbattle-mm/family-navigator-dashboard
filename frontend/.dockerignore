@@ -1,0 +1,19 @@
+# Ignore files not needed for the Docker build
+node_modules
+*.log
+.git
+.gitignore
+.DS_Store
+*.pem
+*.tar
+*.img
+*.tsbuildinfo
+next-env.d.ts
+/coverage
+/.next
+/out
+/build
+
+# Ignore local environment files
+.env*
+!.env # Allow the .env file to be accessible by Docker
