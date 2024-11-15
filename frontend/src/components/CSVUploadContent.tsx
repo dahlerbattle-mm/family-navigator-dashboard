@@ -1,15 +1,44 @@
 import { useState } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, CircularProgress } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 
 const CSVUploadContent = () => {
   const [message, setMessage] = useState('');
+  const [uploading, setUploading] = useState(false);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setMessage('CSV successfully uploaded');
+    if (!file) {
+      setMessage('No file selected');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setUploading(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/csv-upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMessage('CSV successfully uploaded and processed.');
+        console.log('Server response:', data);
+      } else {
+        const error = await response.json();
+        setMessage(`Upload failed: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setMessage('An error occurred while uploading the file.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -37,8 +66,9 @@ const CSVUploadContent = () => {
             variant="contained"
             component="label"
             startIcon={<UploadFileIcon />}
+            disabled={uploading}
           >
-            Choose CSV File
+            {uploading ? 'Uploading...' : 'Choose CSV File'}
             <input
               type="file"
               accept=".csv"
@@ -47,8 +77,15 @@ const CSVUploadContent = () => {
             />
           </Button>
 
+          {uploading && (
+            <CircularProgress size={24} sx={{ mt: 2 }} />
+          )}
+
           {message && (
-            <Typography color="success.main" mt={2}>
+            <Typography
+              color={message.startsWith('CSV successfully') ? 'success.main' : 'error.main'}
+              mt={2}
+            >
               {message}
             </Typography>
           )}
@@ -59,4 +96,3 @@ const CSVUploadContent = () => {
 };
 
 export default CSVUploadContent;
-
