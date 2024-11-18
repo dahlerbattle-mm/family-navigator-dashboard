@@ -1,11 +1,18 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from biz_logic import process_uploaded_data
 import os
 import json
 from supabase import create_client, Client
+import pandas as pd
+from io import BytesIO
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -28,203 +35,297 @@ def read_root():
     return {"message": "Welcome to the Family Navigator backend!"}
 
 @app.post("/api/csv-upload")
-async def upload_csv(file: UploadFile = File(...), organization_id: str = None):
+async def upload_file(
+    file: UploadFile = File(...),
+    organization: str = Form(...)
+):
     """
-    Handles CSV upload and triggers ETL process with the uploaded data.
+    Endpoint to upload a CSV file along with the organization name.
+
+    Parameters:
+    - file (UploadFile): The CSV file uploaded by the user.
+    - organization (str): The organization name provided by the user.
+
+    Returns:
+    - dict: A success message and result of the processing.
     """
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Only CSV files are allowed.")
+    # Read the uploaded file into a pandas DataFrame
+    content = await file.read()
+    answers_df = pd.read_csv(io.StringIO(content.decode("utf-8")))
 
-    if not organization_id:
-        raise HTTPException(status_code=400, detail="Organization ID is required.")
+    # Path to FamNavQs JSON (adjust based on your backend structure)
+    FamNavQs_path = "backend/FamNavQs.json"
 
-    # Save the uploaded CSV file
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
-    with open(file_path, "wb") as f:
-        f.write(await file.read())
+    # Supabase credentials (replace with your actual credentials)
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
-    try:
-        # Read the CSV file
-        with open(file_path, "r", encoding="utf-8") as csv_file:
-            csv_data = csv_file.read()
+    # Call the process_data function
+    result = process_data(FamNavQs_path, answers_df, SUPABASE_URL, SUPABASE_KEY, organization)
 
-        # Save the raw payload to Supabase
-        save_raw_payload_to_supabase(organization_id, csv_data)
-
-        # Trigger the ETL process
-        etl_result = run_etl_process(organization_id)
-
-        # Clean up the temporary file
-        os.remove(file_path)
-
-        return {"success": True, "message": "ETL completed successfully", "etl_result": etl_result}
-    except Exception as e:
-        # Clean up the temporary file on error
-        os.remove(file_path)
-        raise HTTPException(status_code=500, detail=str(e))
+    return {"message": "File processed", "result": result}
 
 @app.get("/api/get-category-payload/{organization_id}")
-async def get_category_payload(organization_id: str):
+def get_category_payload(organization_id: str):
     """
-    Retrieve the category payload (cp_by_cat) from Supabase for a specific organization.
+    Retrieves data from Supabase and formats it into the desired JSON structure.
     """
-    try:
-        # Query Supabase for cp_by_cat
-        response = supabase.table("dashboard_data").select("cp_by_cat").eq("organization_id", organization_id).execute()
+    # Fetch Supabase credentials from the environment
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
-        # Check response status and data
-        if response.status_code == 200 and response.data:
-            cp_by_cat = response.data[0].get("cp_by_cat")
-            if cp_by_cat:
-                return {
-                    "organization_id": organization_id,
-                    "metadata": {
-                        "payload_type": "category",
-                        "description": "Aggregated data by category",
-                        "source": "Supabase"
-                    },
-                    "category_payload": json.loads(cp_by_cat)
-                }
-            else:
-                raise HTTPException(status_code=404, detail="Category payload not found for the specified organization")
-        else:
-            raise HTTPException(status_code=404, detail=f"No data found for organization ID: {organization_id}")
+    if not supabase_url or not supabase_key:
+        raise HTTPException(status_code=500, detail="Supabase credentials are not properly configured.")
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Initialize Supabase client
+    supabase = create_client(supabase_url, supabase_key)
+
+    # Fetch data from the `dashboard_data` table
+    response = supabase.table("dashboard_data").select("*").eq("organization", organization_id).execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="No data found for the given organization.")
+
+    # Load data into a pandas DataFrame
+    df = pd.DataFrame(response.data)
+
+    # Ensure required columns exist in the DataFrame
+    required_columns = ["organization", "constituency_id", "constituency_name", "category", "answer"]
+    if not all(col in df.columns for col in required_columns):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing required columns: {set(required_columns) - set(df.columns)}"
+        )
+
+    # Group and aggregate data by category and constituency
+    grouped = df.groupby(["category", "constituency_id", "constituency_name"]).agg(
+        count=("answer", "count"),
+        sum=("answer", "sum"),
+        average=("answer", "mean")
+    ).reset_index()
+
+    # Calculate totals for each category
+    category_totals = grouped.groupby(["category"]).agg(
+        total_count=("count", "sum"),
+        total_sum=("sum", "sum"),
+        total_average=("sum", "mean")
+    ).reset_index()
+
+    # Merge totals back with grouped data
+    merged = pd.merge(
+        grouped,
+        category_totals,
+        on=["category"],
+        how="left",
+        suffixes=("", "_total")
+    )
+
+    # Format the data into the desired nested JSON structure
+    result = {
+        "organization_id": organization_id,
+        "metadata": {
+            "payload_type": "category",
+            "description": "Aggregated data by category",
+            "source": "Supabase"
+        },
+        "category_payload": {}
+    }
+    for category in merged["category"].unique():
+        cat_data = merged[merged["category"] == category]
+        category_dict = {}
+        for _, row in cat_data.iterrows():
+            constituency = row["constituency_id"]
+            constituency_dict = {
+                "constituency_name": row["constituency_name"],
+                "count": row["count"],
+                "sum": row["sum"],
+                "average": row["average"]
+            }
+            category_dict[constituency] = constituency_dict
+        category_dict["total"] = {
+            "count": cat_data["total_count"].iloc[0],
+            "sum": cat_data["total_sum"].iloc[0],
+            "average": cat_data["total_average"].iloc[0]
+        }
+        result["category_payload"][category] = category_dict
+
+    # Return the formatted JSON
+    return JSONResponse(content=result, status_code=200)
 
 
 @app.get("/api/get-subcategory-payload/{organization_id}")
-async def get_subcategory_payload(organization_id: str):
+def get_subcategory_payload(organization_id: str):
     """
-    Retrieve the subcategory payload (cp_by_subcat) from Supabase for a specific organization.
+    Retrieves data from Supabase and formats it into the desired JSON structure based on subcategories.
     """
-    try:
-        # Query Supabase for cp_by_subcat
-        response = supabase.table("dashboard_data").select("cp_by_subcat").eq("organization_id", organization_id).execute()
+    # Fetch Supabase credentials from the environment
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
-        # Check response status and data
-        if response.status_code == 200 and response.data:
-            cp_by_subcat = response.data[0].get("cp_by_subcat")
-            if cp_by_subcat:
-                return {
-                    "organization_id": organization_id,
-                    "metadata": {
-                        "payload_type": "subcategory",
-                        "description": "Aggregated data by subcategory",
-                        "source": "Supabase"
-                    },
-                    "subcategory_payload": json.loads(cp_by_subcat)
-                }
-            else:
-                raise HTTPException(status_code=404, detail="Subcategory payload not found for the specified organization")
-        else:
-            raise HTTPException(status_code=404, detail=f"No data found for organization ID: {organization_id}")
+    if not supabase_url or not supabase_key:
+        raise HTTPException(status_code=500, detail="Supabase credentials are not properly configured.")
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Initialize Supabase client
+    supabase = create_client(supabase_url, supabase_key)
+
+    # Fetch data from the `dashboard_data` table
+    response = supabase.table("dashboard_data").select("*").eq("organization", organization_id).execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="No data found for the given organization.")
+
+    # Load data into a pandas DataFrame
+    df = pd.DataFrame(response.data)
+
+    # Ensure required columns exist in the DataFrame
+    required_columns = ["organization", "constituency_id", "constituency_name", "subcategory", "answer"]
+    if not all(col in df.columns for col in required_columns):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing required columns: {set(required_columns) - set(df.columns)}"
+        )
+
+    # Group and aggregate data by subcategory and constituency
+    grouped = df.groupby(["subcategory", "constituency_id", "constituency_name"]).agg(
+        count=("answer", "count"),
+        sum=("answer", "sum"),
+        average=("answer", "mean")
+    ).reset_index()
+
+    # Calculate totals for each subcategory
+    subcategory_totals = grouped.groupby(["subcategory"]).agg(
+        total_count=("count", "sum"),
+        total_sum=("sum", "sum"),
+        total_average=("sum", "mean")
+    ).reset_index()
+
+    # Merge totals back with grouped data
+    merged = pd.merge(
+        grouped,
+        subcategory_totals,
+        on=["subcategory"],
+        how="left",
+        suffixes=("", "_total")
+    )
+
+    # Format the data into the desired nested JSON structure
+    result = {
+        "organization_id": organization_id,
+        "metadata": {
+            "payload_type": "subcategory",
+            "description": "Aggregated data by subcategory",
+            "source": "Supabase"
+        },
+        "subcategory_payload": {}
+    }
+    for subcategory in merged["subcategory"].unique():
+        subcat_data = merged[merged["subcategory"] == subcategory]
+        subcategory_dict = {}
+        for _, row in subcat_data.iterrows():
+            constituency = row["constituency_id"]
+            constituency_dict = {
+                "constituency_name": row["constituency_name"],
+                "count": row["count"],
+                "sum": row["sum"],
+                "average": row["average"]
+            }
+            subcategory_dict[constituency] = constituency_dict
+        subcategory_dict["total"] = {
+            "count": subcat_data["total_count"].iloc[0],
+            "sum": subcat_data["total_sum"].iloc[0],
+            "average": subcat_data["total_average"].iloc[0]
+        }
+        result["subcategory_payload"][subcategory] = subcategory_dict
+
+    # Return the formatted JSON
+    return JSONResponse(content=result, status_code=200)
 
 
-@app.get("/api/get-questions-payload/{organization_id}")
-async def get_questions_payload(organization_id: str):
+@app.get("/api/get-question-payload/{organization_id}")
+def get_question_payload(organization_id: str):
     """
-    Retrieve the questions payload (cp_by_q) from Supabase for a specific organization.
+    Retrieves data from Supabase and formats it into the desired JSON structure by question.
     """
-    try:
-        # Query Supabase for cp_by_q
-        response = supabase.table("dashboard_data").select("cp_by_q").eq("organization_id", organization_id).execute()
+    # Fetch Supabase credentials from the environment
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
-        # Check response status and data
-        if response.status_code == 200 and response.data:
-            cp_by_q = response.data[0].get("cp_by_q")
-            if cp_by_q:
-                return {
-                    "organization_id": organization_id,
-                    "metadata": {
-                        "payload_type": "questions",
-                        "description": "Processed data by questions",
-                        "source": "Supabase"
-                    },
-                    "questions_payload": json.loads(cp_by_q)
-                }
-            else:
-                raise HTTPException(status_code=404, detail="Questions payload not found for the specified organization")
-        else:
-            raise HTTPException(status_code=404, detail=f"No data found for organization ID: {organization_id}")
+    if not supabase_url or not supabase_key:
+        raise HTTPException(status_code=500, detail="Supabase credentials are not properly configured.")
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Initialize Supabase client
+    supabase = create_client(supabase_url, supabase_key)
+
+    # Fetch data from the `dashboard_data` table
+    response = supabase.table("dashboard_data").select("*").eq("organization", organization_id).execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="No data found for the given organization.")
+
+    # Load data into a pandas DataFrame
+    df = pd.DataFrame(response.data)
+
+    # Ensure required columns exist in the DataFrame
+    required_columns = ["q#", "question", "category", "subcategory", "constituency_id", "constituency_name", "answer"]
+    if not all(col in df.columns for col in required_columns):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing required columns: {set(required_columns) - set(df.columns)}"
+        )
+
+    # Group by question, constituency, and calculate averages
+    grouped = df.groupby(["q#", "question", "category", "subcategory", "constituency_id", "constituency_name"]).agg(
+        average=("answer", "mean")
+    ).reset_index()
+
+    # Format the data into the desired nested JSON structure
+    question_payload = []
+    for question_id in grouped["q#"].unique():
+        question_data = grouped[grouped["q#"] == question_id]
+        for _, row in question_data.iterrows():
+            # Create an entry for each question, category, and subcategory
+            entry = {
+                "q#": row["q#"],
+                "question": row["question"],
+                "category": row["category"],
+                "subcategory": row["subcategory"],
+                "constituency_averages": {}
+            }
+
+            # Populate constituency averages
+            constituencies = question_data[["constituency_id", "constituency_name", "average"]].drop_duplicates()
+            for _, constituency_row in constituencies.iterrows():
+                entry["constituency_averages"][constituency_row["constituency_name"]] = constituency_row["average"]
+
+            # Add the entry to the question_payload
+            question_payload.append(entry)
 
 
-def save_raw_payload_to_supabase(organization_id: str, csv_data: str):
-    """
-    Save the raw CSV data to the Supabase `dashboard_data` table.
-    """
-    from supabase import create_client
-
-    # Supabase credentials
-    SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    SUPABASE_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-    response = supabase.table("dashboard_data").update({
-        "raw_payload": csv_data
-    }).eq("organization_id", organization_id).execute()
-
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Failed to save raw payload to Supabase")
-
+# Temporary directory for storing PDFs
+TEMP_DIR = "/tmp"
 
 @app.get("/api/generate-report/{organization_id}")
 async def generate_report(organization_id: str):
     """
-    Generate a PDF report for the given organization_id using data from Supabase.
+    Generate a PDF report for the given organization_id using data from the payload APIs.
     """
     try:
-        # Step 1: Fetch company data from Supabase
-        response = supabase.from("companies").select("*").eq("id", organization_id).execute()
-        if response.status_code != 200 or not response.data:
-            raise HTTPException(status_code=404, detail="Company data not found")
-        company_data = response.data[0]  # Assuming company data is a single record
+        # Base URL for the API
+        base_url = "http://127.0.0.1:8000"
 
-        # Step 2: Fetch payloads for the company
-        category_payload = (
-            supabase.from("dashboard_data")
-            .select("cp_by_cat")
-            .eq("organization_id", organization_id)
-            .execute()
-        )
-        subcategory_payload = (
-            supabase.from("dashboard_data")
-            .select("cp_by_subcat")
-            .eq("organization_id", organization_id)
-            .execute()
-        )
-        questions_payload = (
-            supabase.from("dashboard_data")
-            .select("cp_by_q")
-            .eq("organization_id", organization_id)
-            .execute()
-        )
+        # Step 1: Fetch payloads from APIs
+        category_payload = requests.get(f"{base_url}/api/get-category-payload/{organization_id}").json()
+        subcategory_payload = requests.get(f"{base_url}/api/get-subcategory-payload/{organization_id}").json()
+        questions_payload = requests.get(f"{base_url}/api/get-question-payload/{organization_id}").json()
 
-        if category_payload.status_code != 200:
-            category_payload = {"data": []}
-        if subcategory_payload.status_code != 200:
-            subcategory_payload = {"data": []}
-        if questions_payload.status_code != 200:
-            questions_payload = {"data": []}
-
-        # Step 3: Generate the PDF
+        # Step 2: Generate the PDF
         pdf_path = os.path.join(TEMP_DIR, f"FamilyNavigator_Report_{organization_id}.pdf")
         generate_pdf(
             pdf_path,
-            company_data,
-            category_payload.data,
-            subcategory_payload.data,
-            questions_payload.data,
+            organization_id,
+            category_payload,
+            subcategory_payload,
+            questions_payload,
         )
 
-        # Step 4: Return the PDF as a file response
+        # Step 3: Return the PDF as a file response
         return FileResponse(
             pdf_path,
             media_type="application/pdf",
@@ -235,7 +336,7 @@ async def generate_report(organization_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def generate_pdf(pdf_path, company_data, category_payload, subcategory_payload, questions_payload):
+def generate_pdf(pdf_path, organization_id, category_payload, subcategory_payload, questions_payload):
     """
     Generate a PDF report using ReportLab.
     """
@@ -245,71 +346,68 @@ def generate_pdf(pdf_path, company_data, category_payload, subcategory_payload, 
     c.setFont("Helvetica-Bold", 20)
     c.drawString(200, 750, "Family Navigator Report")
 
-    # Company Information
+    # Organization Information
     c.setFont("Helvetica", 12)
-    c.drawString(50, 720, f"Company: {company_data['name']}")
-    c.drawString(50, 700, f"Organization: {company_data['organization_name']}")
+    c.drawString(50, 720, f"Organization ID: {organization_id}")
 
     # Executive Summary
     c.setFont("Helvetica-Bold", 14)
-    c.drawString(50, 670, "Executive Summary")
+    c.drawString(50, 700, "Executive Summary")
     c.setFont("Helvetica", 12)
     c.drawString(
         50,
-        650,
+        680,
         "This report provides an analysis of Family Navigator results, including family dynamics, roles, and satisfaction.",
     )
 
     # Categories Section
     c.setFont("Helvetica-Bold", 14)
-    c.drawString(50, 620, "Categories")
-    y = 600
-    for category in category_payload:
-        data = json.loads(category["cp_by_cat"])
-        for key, value in data.items():
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(50, y, f"Category: {key}")
-            c.setFont("Helvetica", 10)
-            c.drawString(50, y - 15, f"Total Count: {value['total']['count']}")
-            c.drawString(50, y - 30, f"Total Average: {value['total']['average']}")
-            y -= 60
-            if y < 100:  # Add a new page if necessary
-                c.showPage()
-                y = 750
+    c.drawString(50, 660, "Categories")
+    y = 640
+    for category, data in category_payload.get("category_payload", {}).items():
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, y, f"Category: {category}")
+        c.setFont("Helvetica", 10)
+        c.drawString(50, y - 15, f"Total Count: {data['total']['count']}")
+        c.drawString(50, y - 30, f"Total Average: {data['total']['average']}")
+        y -= 60
+        if y < 100:  # Add a new page if necessary
+            c.showPage()
+            y = 750
 
     # Subcategories Section
     c.setFont("Helvetica-Bold", 14)
     c.drawString(50, y, "Subcategories")
     y -= 20
-    for subcategory in subcategory_payload:
-        data = json.loads(subcategory["cp_by_subcat"])
-        for key, value in data.items():
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(50, y, f"Subcategory: {key}")
-            c.setFont("Helvetica", 10)
-            c.drawString(50, y - 15, f"Total Count: {value['total']['count']}")
-            c.drawString(50, y - 30, f"Total Average: {value['total']['average']}")
-            y -= 60
-            if y < 100:  # Add a new page if necessary
-                c.showPage()
-                y = 750
+    for subcategory, data in subcategory_payload.get("subcategory_payload", {}).items():
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, y, f"Subcategory: {subcategory}")
+        c.setFont("Helvetica", 10)
+        c.drawString(50, y - 15, f"Total Count: {data['total']['count']}")
+        c.drawString(50, y - 30, f"Total Average: {data['total']['average']}")
+        y -= 60
+        if y < 100:  # Add a new page if necessary
+            c.showPage()
+            y = 750
 
     # Questions Section
     c.setFont("Helvetica-Bold", 14)
     c.drawString(50, y, "Questions")
     y -= 20
-    for question in questions_payload:
-        data = json.loads(question["cp_by_q"])
-        for q in data:
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(50, y, f"Question: {q['q#']} - {q['question']}")
-            c.setFont("Helvetica", 10)
-            c.drawString(50, y - 15, f"Category: {q['cat']}")
-            c.drawString(50, y - 30, f"Total Average: {q['entities']['total']['average']}")
-            y -= 60
-            if y < 100:  # Add a new page if necessary
-                c.showPage()
-                y = 750
+    for question in questions_payload.get("question_payload", []):
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, y, f"Question: {question['q#']} - {question['question']}")
+        c.setFont("Helvetica", 10)
+        c.drawString(50, y - 15, f"Category: {question['category']}")
+        c.drawString(50, y - 30, f"Subcategory: {question['subcategory']}")
+        averages = ", ".join(
+            f"{key}: {value:.2f}" for key, value in question["constituency_averages"].items()
+        )
+        c.drawString(50, y - 45, f"Constituency Averages: {averages}")
+        y -= 80
+        if y < 100:  # Add a new page if necessary
+            c.showPage()
+            y = 750
 
     # Finalize the PDF
     c.save()

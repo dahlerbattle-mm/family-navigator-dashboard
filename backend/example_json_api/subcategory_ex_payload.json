@@ -7,51 +7,34 @@
   },
   "subcategory_payload": {
     "Subcategory 1": {
-      "cat": "Category 1",
-      "Entity 1": {
-        "count": 5,
-        "sum": 25,
-        "average": 5.0
-      },
-      "Entity 2": {
+      "1": {
+        "constituency_name": "Family 1",
         "count": 10,
         "sum": 50,
         "average": 5.0
       },
-      "total": {
+      "2": {
+        "constituency_name": "Family 2",
         "count": 15,
         "sum": 75,
+        "average": 5.0
+      },
+      "total": {
+        "count": 25,
+        "sum": 125,
         "average": 5.0
       }
     },
     "Subcategory 2": {
-      "cat": "Category 1",
-      "Entity 3": {
-        "count": 8,
-        "sum": 40,
+      "3": {
+        "constituency_name": "Family 3",
+        "count": 20,
+        "sum": 100,
         "average": 5.0
       },
       "total": {
-        "count": 8,
-        "sum": 40,
-        "average": 5.0
-      }
-    },
-    "Subcategory 3": {
-      "cat": "Category 2",
-      "Entity 4": {
-        "count": 7,
-        "sum": 35,
-        "average": 5.0
-      },
-      "Entity 5": {
-        "count": 6,
-        "sum": 30,
-        "average": 5.0
-      },
-      "total": {
-        "count": 13,
-        "sum": 65,
+        "count": 20,
+        "sum": 100,
         "average": 5.0
       }
     }

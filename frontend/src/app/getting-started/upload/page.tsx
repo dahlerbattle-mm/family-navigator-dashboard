@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Box } from '@mui/material';
+import { Box, TextField, Button, Typography } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import Header from '@/app/(DashboardLayout)/layout/header/Header';
 import Sidebar from '@/app/(DashboardLayout)/layout/sidebar/Sidebar';
@@ -39,3 +39,65 @@ const CSVUpload = () => {
 };
 
 export default CSVUpload;
+
+// CSVUploadContent Component
+const CSVUploadContent = () => {
+  const [organization, setOrganization] = useState('');
+  const [file, setFile] = useState(null);
+
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
+  };
+
+  const handleOrganizationChange = (event) => {
+    setOrganization(event.target.value);
+  };
+
+  const handleUpload = async () => {
+    if (!file || !organization) {
+      alert('Please provide both an organization name and a CSV file.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('organization', organization);
+
+    try {
+      const response = await fetch('/api/csv-upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      alert(result.message);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('An error occurred while uploading the file.');
+    }
+  };
+
+  return (
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        Upload CSV File
+      </Typography>
+      <TextField
+        label="Organization Name"
+        value={organization}
+        onChange={handleOrganizationChange}
+        fullWidth
+        margin="normal"
+      />
+      <input
+        type="file"
+        accept=".csv"
+        onChange={handleFileChange}
+        style={{ margin: '20px 0' }}
+      />
+      <Button variant="contained" color="primary" onClick={handleUpload}>
+        Upload
+      </Button>
+    </Box>
+  );
+};

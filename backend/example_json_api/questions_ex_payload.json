@@ -5,53 +5,35 @@
     "description": "Processed data by questions",
     "source": "Supabase"
   },
-  "questions_payload": [
+  "question_payload": [
     {
       "q#": "Q1",
-      "question": "What is your satisfaction level?",
-      "cat": "Category 1",
-      "subcat": "Subcategory 1",
-      "entities": {
-        "total": {
-          "count": 10,
-          "sum": 50,
-          "average": 5.0,
-          "rank": 0.0
-        },
-        "Family 1": {
-          "count": 3,
-          "sum": 15,
-          "average": 5.0
-        },
-        "Family 2": {
-          "count": 7,
-          "sum": 35,
-          "average": 5.0
-        }
+      "question": "Family members respect one another.",
+      "category": "Family Dynamics",
+      "subcategory": "Culture & Communication",
+      "constituency_averages": {
+        "Family 1": 4.5,
+        "Family 2": 4.0
+      }
+    },
+    {
+      "q#": "Q1",
+      "question": "Family members respect one another.",
+      "category": "Family Leadership",
+      "subcategory": "Support Systems",
+      "constituency_averages": {
+        "Family 1": 4.5,
+        "Family 2": 4.0
       }
     },
     {
       "q#": "Q2",
-      "question": "How likely are you to recommend us?",
-      "cat": "Category 1",
-      "subcat": "Subcategory 2",
-      "entities": {
-        "total": {
-          "count": 8,
-          "sum": 40,
-          "average": 5.0,
-          "rank": 0.0
-        },
-        "Family 3": {
-          "count": 4,
-          "sum": 20,
-          "average": 5.0
-        },
-        "Family 4": {
-          "count": 4,
-          "sum": 20,
-          "average": 5.0
-        }
+      "question": "Family members are successful in their work roles.",
+      "category": "Preparation and Development",
+      "subcategory": "Maturity",
+      "constituency_averages": {
+        "Family 1": 3.8,
+        "Family 2": 4.2
       }
     }
   ]
