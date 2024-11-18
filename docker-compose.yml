@@ -10,6 +10,7 @@ services:
       - ./backend/.env # Use the local .env file for backend
     depends_on:
       - frontend # Optional: Ensure frontend starts before backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     image: metricmatters/famnav-frontend:latest

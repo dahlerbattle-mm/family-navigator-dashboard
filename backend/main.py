@@ -22,6 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Family Navigator backend!"}
+
 @app.post("/api/csv-upload")
 async def upload_csv(file: UploadFile = File(...), organization_id: str = None):
     """
