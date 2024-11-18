@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from biz_logic import process_uploaded_data
+from biz_logic import process_data
 import os
 import json
 from supabase import create_client, Client
