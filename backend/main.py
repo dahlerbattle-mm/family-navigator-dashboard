@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException, Form, File, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from reportlab.lib.pagesizes import letter
@@ -8,7 +8,8 @@ import os
 import json
 from supabase import create_client, Client
 import pandas as pd
-from io import BytesIO
+import requests
+import io
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -298,8 +299,8 @@ def get_question_payload(organization_id: str):
             question_payload.append(entry)
 
 
-# Temporary directory for storing PDFs
-TEMP_DIR = "/tmp"
+TEMP_DIR = "/tmp"  # Update the path as needed
+os.makedirs(TEMP_DIR, exist_ok=True)
 
 @app.get("/api/generate-report/{organization_id}")
 async def generate_report(organization_id: str):

@@ -6,4 +6,8 @@ python-dotenv
 python-multipart
 pandas
 reportlab
-
+numpy
+requests
+python-dateutil
+pytz
+aiofiles

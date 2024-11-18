@@ -1,6 +1,12 @@
-import pandas as pd
-from datetime import datetime
-from supabase import create_client
+import os  # For file path validation (optional)
+import json  # If working with JSON operations directly
+import pandas as pd  # For DataFrame operations
+from datetime import datetime  # For timestamping
+from supabase import create_client  # For Supabase integration
+import numpy as np  # Optional, if needed for advanced DataFrame operations
+import pytz  # Optional, for timezone-aware timestamps
+from typing import List, Dict  # Optional, for type hinting
+
 
 def process_data(FamNavQs_path, answers_df, supabase_url, supabase_key, organization):
     """
