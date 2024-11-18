@@ -1,0 +1,42 @@
+
+
+{
+    "organization_id": "org123",
+    "metadata": {
+      "payload_type": "category",
+      "description": "Aggregated data by category",
+      "source": "Supabase"
+    },
+    "category_payload": {
+      "Category 1": {
+        "Entity 1": {
+          "count": 10,
+          "sum": 50,
+          "average": 5.0
+        },
+        "Entity 2": {
+          "count": 15,
+          "sum": 75,
+          "average": 5.0
+        },
+        "total": {
+          "count": 25,
+          "sum": 125,
+          "average": 5.0
+        }
+      },
+      "Category 2": {
+        "Entity 3": {
+          "count": 20,
+          "sum": 100,
+          "average": 5.0
+        },
+        "total": {
+          "count": 20,
+          "sum": 100,
+          "average": 5.0
+        }
+      }
+    }
+  }
+  

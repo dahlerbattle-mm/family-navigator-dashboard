@@ -124,16 +124,35 @@ def run_etl_process(organization_id: str):
                     df_by_subcat[subcategory][entity]['count'] += stats['count']
                     df_by_subcat[subcategory][entity]['sum'] += stats['sum']
 
-        # Calculate averages for category and subcategory data
+        # Calculate averages for category and subcategory data and add totals
         for category, entities in df_by_cat.items():
+            total_count = 0
+            total_sum = 0
             for entity, stats in entities.items():
                 if stats['count'] > 0:
                     stats['average'] = stats['sum'] / stats['count']
+                total_count += stats['count']
+                total_sum += stats['sum']
+            entities['total'] = {
+                'count': total_count,
+                'sum': total_sum,
+                'average': total_sum / total_count if total_count > 0 else 0.0
+            }
 
         for subcategory, entities in df_by_subcat.items():
+            total_count = 0
+            total_sum = 0
             for entity, stats in entities.items():
                 if entity != 'cat' and stats['count'] > 0:
                     stats['average'] = stats['sum'] / stats['count']
+                if entity != 'cat':
+                    total_count += stats['count']
+                    total_sum += stats['sum']
+            entities['total'] = {
+                'count': total_count,
+                'sum': total_sum,
+                'average': total_sum / total_count if total_count > 0 else 0.0
+            }
 
         # Step 6: Save processed data back to Supabase
         save_to_supabase(organization_id, df_by_cat, df_by_subcat, qanda_data)

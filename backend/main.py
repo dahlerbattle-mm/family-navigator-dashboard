@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 import os
-import pandas as pd
-from biz_logic import run_etl_process
-import uvicorn
+import json
+from supabase import create_client, Client
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -172,3 +173,143 @@ def save_raw_payload_to_supabase(organization_id: str, csv_data: str):
 
     if response.status_code != 200:
         raise HTTPException(status_code=500, detail="Failed to save raw payload to Supabase")
+
+
+@app.get("/api/generate-report/{organization_id}")
+async def generate_report(organization_id: str):
+    """
+    Generate a PDF report for the given organization_id using data from Supabase.
+    """
+    try:
+        # Step 1: Fetch company data from Supabase
+        response = supabase.from("companies").select("*").eq("id", organization_id).execute()
+        if response.status_code != 200 or not response.data:
+            raise HTTPException(status_code=404, detail="Company data not found")
+        company_data = response.data[0]  # Assuming company data is a single record
+
+        # Step 2: Fetch payloads for the company
+        category_payload = (
+            supabase.from("dashboard_data")
+            .select("cp_by_cat")
+            .eq("organization_id", organization_id)
+            .execute()
+        )
+        subcategory_payload = (
+            supabase.from("dashboard_data")
+            .select("cp_by_subcat")
+            .eq("organization_id", organization_id)
+            .execute()
+        )
+        questions_payload = (
+            supabase.from("dashboard_data")
+            .select("cp_by_q")
+            .eq("organization_id", organization_id)
+            .execute()
+        )
+
+        if category_payload.status_code != 200:
+            category_payload = {"data": []}
+        if subcategory_payload.status_code != 200:
+            subcategory_payload = {"data": []}
+        if questions_payload.status_code != 200:
+            questions_payload = {"data": []}
+
+        # Step 3: Generate the PDF
+        pdf_path = os.path.join(TEMP_DIR, f"FamilyNavigator_Report_{organization_id}.pdf")
+        generate_pdf(
+            pdf_path,
+            company_data,
+            category_payload.data,
+            subcategory_payload.data,
+            questions_payload.data,
+        )
+
+        # Step 4: Return the PDF as a file response
+        return FileResponse(
+            pdf_path,
+            media_type="application/pdf",
+            filename=f"FamilyNavigator_Report_{organization_id}.pdf",
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def generate_pdf(pdf_path, company_data, category_payload, subcategory_payload, questions_payload):
+    """
+    Generate a PDF report using ReportLab.
+    """
+    c = canvas.Canvas(pdf_path, pagesize=letter)
+
+    # Title
+    c.setFont("Helvetica-Bold", 20)
+    c.drawString(200, 750, "Family Navigator Report")
+
+    # Company Information
+    c.setFont("Helvetica", 12)
+    c.drawString(50, 720, f"Company: {company_data['name']}")
+    c.drawString(50, 700, f"Organization: {company_data['organization_name']}")
+
+    # Executive Summary
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, 670, "Executive Summary")
+    c.setFont("Helvetica", 12)
+    c.drawString(
+        50,
+        650,
+        "This report provides an analysis of Family Navigator results, including family dynamics, roles, and satisfaction.",
+    )
+
+    # Categories Section
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, 620, "Categories")
+    y = 600
+    for category in category_payload:
+        data = json.loads(category["cp_by_cat"])
+        for key, value in data.items():
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(50, y, f"Category: {key}")
+            c.setFont("Helvetica", 10)
+            c.drawString(50, y - 15, f"Total Count: {value['total']['count']}")
+            c.drawString(50, y - 30, f"Total Average: {value['total']['average']}")
+            y -= 60
+            if y < 100:  # Add a new page if necessary
+                c.showPage()
+                y = 750
+
+    # Subcategories Section
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, y, "Subcategories")
+    y -= 20
+    for subcategory in subcategory_payload:
+        data = json.loads(subcategory["cp_by_subcat"])
+        for key, value in data.items():
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(50, y, f"Subcategory: {key}")
+            c.setFont("Helvetica", 10)
+            c.drawString(50, y - 15, f"Total Count: {value['total']['count']}")
+            c.drawString(50, y - 30, f"Total Average: {value['total']['average']}")
+            y -= 60
+            if y < 100:  # Add a new page if necessary
+                c.showPage()
+                y = 750
+
+    # Questions Section
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, y, "Questions")
+    y -= 20
+    for question in questions_payload:
+        data = json.loads(question["cp_by_q"])
+        for q in data:
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(50, y, f"Question: {q['q#']} - {q['question']}")
+            c.setFont("Helvetica", 10)
+            c.drawString(50, y - 15, f"Category: {q['cat']}")
+            c.drawString(50, y - 30, f"Total Average: {q['entities']['total']['average']}")
+            y -= 60
+            if y < 100:  # Add a new page if necessary
+                c.showPage()
+                y = 750
+
+    # Finalize the PDF
+    c.save()
