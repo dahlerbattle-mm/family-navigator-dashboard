@@ -1,28 +1,90 @@
-# <a href="https://modernize-nextjs-free.vercel.app/?ref=5">Modernize-nextjs-free</a>
-Modernize Free Next.js 14 Admin Template with Material Ui + Typescript 
-<!-- Place this tag where you want the button to render. -->
-<a class="github-button" href="https://github.com/adminmart/Modernize-Nextjs-Free" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" aria-label="Star adminmart/Modernize-Nextjs-Free on GitHub">Give a Star</a>
-# Installation 👨🏻‍💻
+Family Navigator Dashboard: README
+This guide explains how to spin up the Family Navigator Dashboard project using Docker containers for both the backend (FastAPI) and the frontend (Next.js). The Docker images are prebuilt and available on Docker Hub, so you don't need to build them locally.
 
-> We recommend you use npm
+Prerequisites
+Install Docker and Docker Compose:
 
-1. Install all packages
+Install Docker
+Install Docker Compose
+Clone the Repository: Clone the project repository to your local machine:
 
-```
-npm i
-```
+bash
+Copy code
+git clone https://github.com/dahlerbattle-mm/family-navigator-dashboard.git
+cd family-navigator-dashboard
+Configure Environment Files:
 
-2. Run Development Server
+Backend: Ensure the backend/.env file contains all the required environment variables (e.g., database connection strings, API keys).
+Frontend: Ensure the frontend/.env file contains any necessary configuration for the frontend.
+Project Structure
+bash
+Copy code
+family-navigator-dashboard/
+├── backend/
+│   ├── .env                # Environment variables for backend
+├── frontend/
+│   ├── .env                # Environment variables for frontend
+├── docker-compose.yml      # Docker Compose configuration
+Steps to Spin Up the Project
+1. Pull Prebuilt Images from Docker Hub
+Ensure you have the latest images for the backend and frontend by pulling them:
 
-```
-npm run dev
-```
+bash
+Copy code
+docker pull metricmatters/famnav-backend:latest
+docker pull metricmatters/famnav-frontend:latest
+2. Start the Docker Containers
+Run the following command to spin up the backend and frontend containers:
 
-3. Build your project
+bash
+Copy code
+docker-compose up
+Frontend will be accessible at http://localhost:3000.
+Backend will be accessible at http://localhost:8000.
+3. Verify Backend is Running
+Test the backend using curl:
 
-```
-npm run build
-```
+bash
+Copy code
+curl http://localhost:8000/
+You should see a response like:
 
+json
+Copy code
+{"message": "Welcome to the Family Navigator backend!"}
+Common Commands
+Start the Project
+bash
+Copy code
+docker-compose up
+Stop the Project
+bash
+Copy code
+docker-compose down
+View Logs for a Specific Container
+Backend Logs:
+bash
+Copy code
+docker logs backend-container
+Frontend Logs:
+bash
+Copy code
+docker logs frontend-container
+Backend API Overview
+Default Endpoints
+Swagger UI: http://localhost:8000/docs
+ReDoc Documentation: http://localhost:8000/redoc
+Frontend Overview
+The frontend is built with Next.js and is accessible at http://localhost:3000.
 
-
+Troubleshooting
+1. Backend Exits Immediately
+Check the backend container logs:
+bash
+Copy code
+docker logs backend-container
+2. Frontend Doesn’t Load
+Check the frontend container logs:
+bash
+Copy code
+docker logs frontend-container
