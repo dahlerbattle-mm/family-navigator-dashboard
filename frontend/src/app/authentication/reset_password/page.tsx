@@ -4,11 +4,11 @@ import { Grid, Box, Card, Stack, Typography } from "@mui/material";
 // components
 import PageContainer from "@/app/(DashboardLayout)/components/container/PageContainer";
 import Logo from "@/app/(DashboardLayout)/layout/shared/logo/Logo";
-import AuthLogin from "../auth/AuthLogin";
+import ResetPasswordForm from "../auth/ResetPassword";
 
-const Login2 = () => {
+const ResetPasswordPage = () => {
   return (
-    <PageContainer title="Login" description="this is Login page">
+    <PageContainer title="Reset Password" description="Set your new password">
       <Box
         sx={{
           position: "relative",
@@ -47,43 +47,7 @@ const Login2 = () => {
               <Box display="flex" alignItems="center" justifyContent="center">
                 <Logo noLink />
               </Box>
-              <AuthLogin
-                subtext={
-                  <Typography
-                    variant="subtitle1"
-                    textAlign="center"
-                    color="textSecondary"
-                    mb={1}
-                  ></Typography>
-                }
-                subtitle={
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    justifyContent="center"
-                    mt={3}
-                  >
-                    <Typography
-                      color="textSecondary"
-                      variant="h6"
-                      fontWeight="500"
-                    >
-                      New to Family Navigator?
-                    </Typography>
-                    <Typography
-                      component={Link}
-                      href="/authentication/register"
-                      fontWeight="500"
-                      sx={{
-                        textDecoration: "none",
-                        color: "primary.main",
-                      }}
-                    >
-                      Create an account
-                    </Typography>
-                  </Stack>
-                }
-              />
+              <ResetPasswordForm />
             </Card>
           </Grid>
         </Grid>
@@ -91,4 +55,4 @@ const Login2 = () => {
     </PageContainer>
   );
 };
-export default Login2;
+export default ResetPasswordPage;
