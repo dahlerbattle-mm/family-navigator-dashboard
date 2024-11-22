@@ -1,12 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import CustomTextField from "@/app/(DashboardLayout)/components/forms/theme-elements/CustomTextField";
+import { useRouter } from "next/navigation";
 
 const schema = z.object({
-  email: z.string().email("Invalid email address").min(1, "Email is required"),
+  email: z
+    .string({ message: "Email is required" })
+    .trim()
+    .email("Invalid email address")
+    .min(1, "Email is required"),
 });
 
 const ForgotPasswordForm = () => {
@@ -18,9 +23,16 @@ const ForgotPasswordForm = () => {
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = (data: any) => {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const onSubmit = async (data: any) => {
+    setLoading(true);
     console.log(data);
-    // Handle forgot password logic here
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate delay
+    setLoading(false);
+    router.push("/authentication/verify_otp");
   };
 
   return (
@@ -65,8 +77,9 @@ const ForgotPasswordForm = () => {
           size="large"
           fullWidth
           type="submit"
+          disabled={loading}
         >
-          Send Reset Link
+          {loading ? <CircularProgress size={24} /> : "Send OTP"}
         </Button>
       </Box>
     </form>

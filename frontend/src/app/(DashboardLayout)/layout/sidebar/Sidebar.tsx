@@ -1,7 +1,9 @@
 import { useMediaQuery, Box, Drawer } from "@mui/material";
 import SidebarItems from "./SidebarItems";
 import { Upgrade } from "./Updrade";
-import { Sidebar, Logo } from 'react-mui-sidebar';
+import { Sidebar, Logo } from "react-mui-sidebar";
+import Image from "next/image";
+import logo from "../../../../../public/images/logos/family-navigator-logo-black.svg";
 
 interface ItemType {
   isMobileSidebarOpen: boolean;
@@ -20,16 +22,14 @@ const MSidebar = ({
 
   // Custom CSS for short scrollbar
   const scrollbarStyles = {
-    '&::-webkit-scrollbar': {
-      width: '7px',
-
+    "&::-webkit-scrollbar": {
+      width: "7px",
     },
-    '&::-webkit-scrollbar-thumb': {
-      backgroundColor: '#eff2f7',
-      borderRadius: '15px',
+    "&::-webkit-scrollbar-thumb": {
+      backgroundColor: "#eff2f7",
+      borderRadius: "15px",
     },
   };
-
 
   if (lgUp) {
     return (
@@ -62,7 +62,7 @@ const MSidebar = ({
             }}
           >
             <Sidebar
-              width={'350px'}
+              width={"350px"}
               collapsewidth="80px"
               open={isSidebarOpen}
               themeColor="#5d87ff"
@@ -72,16 +72,10 @@ const MSidebar = ({
               {/* ------------------------------------------- */}
               {/* Logo */}
               {/* ------------------------------------------- */}
-              <Logo
-                img="/images/logos/family-navigator-logo-black.svg"
-                alt="logo"
-                style={{
-                  maxWidth: '100%',   // Ensures the logo does not exceed the container's width
-                  maxHeight: '80px',  // Sets the maximum height (adjust as needed)
-                  width: 'auto',      // Keeps the aspect ratio
-                  height: 'auto',
-                }}
-              />
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                <Image src={logo} alt="logo" width={350} height={130} />
+              </Box>
+
               <Box>
                 {/* ------------------------------------------- */}
                 {/* Sidebar Items */}
@@ -89,7 +83,7 @@ const MSidebar = ({
                 <SidebarItems />
                 <Upgrade />
               </Box>
-            </Sidebar >
+            </Sidebar>
           </Box>
         </Drawer>
       </Box>
@@ -114,7 +108,7 @@ const MSidebar = ({
       {/* ------------------------------------------- */}
       <Box px={2}>
         <Sidebar
-          width={'350px'}
+          width={"350px"}
           collapsewidth="80px"
           isCollapse={false}
           mode="light"
@@ -130,10 +124,10 @@ const MSidebar = ({
             img="/images/logos/family-navigator-logo-black.svg"
             alt="logo"
             style={{
-              maxWidth: '100%',   // Ensures the logo does not exceed the container's width
-              maxHeight: '80px',  // Sets the maximum height (adjust as needed)
-              width: 'auto',      // Keeps the aspect ratio
-              height: 'auto',
+              maxWidth: "100%", // Ensures the logo does not exceed the container's width
+              maxHeight: "80px", // Sets the maximum height (adjust as needed)
+              width: "auto", // Keeps the aspect ratio
+              height: "auto",
             }}
           />
           {/* ------------------------------------------- */}
@@ -146,14 +140,8 @@ const MSidebar = ({
       {/* ------------------------------------------- */}
       {/* Sidebar For Mobile */}
       {/* ------------------------------------------- */}
-
     </Drawer>
   );
 };
 
 export default MSidebar;
-
-
-
-
-

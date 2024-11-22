@@ -22,8 +22,14 @@ interface loginType {
 }
 
 const schema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  username: z
+    .string({ message: "Username is required" })
+    .trim()
+    .min(1, "Username is required"),
+  password: z
+    .string({ message: "Password is required" })
+    .trim()
+    .min(6, "Password must be at least 6 characters"),
 });
 
 const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
@@ -113,7 +119,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
           </FormGroup>
           <Typography
             component={Link}
-            href="/"
+            href="/authentication/forgot_password"
             fontWeight="500"
             sx={{
               textDecoration: "none",

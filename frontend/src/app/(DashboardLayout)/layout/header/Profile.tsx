@@ -9,9 +9,16 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Typography,
+  Divider,
+  Chip,
 } from "@mui/material";
-
-import { IconListCheck, IconMail, IconUser } from "@tabler/icons-react";
+import {
+  IconListCheck,
+  IconMail,
+  IconUser,
+  IconEdit,
+} from "@tabler/icons-react";
 
 const Profile = () => {
   const [anchorEl2, setAnchorEl2] = useState(null);
@@ -26,31 +33,26 @@ const Profile = () => {
     <Box>
       <IconButton
         size="large"
-        aria-label="show 11 new notifications"
+        aria-label="show user profile"
         color="inherit"
-        aria-controls="msgs-menu"
+        aria-controls="profile-menu"
         aria-haspopup="true"
-        sx={{
-          ...(typeof anchorEl2 === "object" && {
-            color: "primary.main",
-          }),
-        }}
         onClick={handleClick2}
       >
         <Avatar
           src="/images/profile/user-1.jpg"
-          alt="image"
+          alt="User Profile"
           sx={{
-            width: 35,
-            height: 35,
+            width: 40,
+            height: 40,
           }}
         />
       </IconButton>
       {/* ------------------------------------------- */}
-      {/* Message Dropdown */}
+      {/* Profile Dropdown */}
       {/* ------------------------------------------- */}
       <Menu
-        id="msgs-menu"
+        id="profile-menu"
         anchorEl={anchorEl2}
         keepMounted
         open={Boolean(anchorEl2)}
@@ -59,27 +61,45 @@ const Profile = () => {
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         sx={{
           "& .MuiMenu-paper": {
-            width: "200px",
+            width: "300px",
+            padding: 2,
           },
         }}
       >
-        <MenuItem>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+          <Avatar
+            src="/images/profile/user-1.jpg"
+            alt="User Profile"
+            sx={{ width: 56, height: 56, mr: 2 }}
+          />
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333' }}>John Doe</Typography>
+            <Typography variant="body2" color="textSecondary">
+              johndoe@gmail.com
+            </Typography>
+
+            <Chip
+              label="Customer Admin"
+              variant="outlined"
+              color="primary"
+              size="small"
+              sx={{ mt: 1 }}
+            />
+          </Box>
+        </Box>
+        <Divider sx={{ mb: 1 }} />
+        <MenuItem component={Link} href="/profile">
           <ListItemIcon>
             <IconUser width={20} />
           </ListItemIcon>
           <ListItemText>My Profile</ListItemText>
         </MenuItem>
+
         <MenuItem>
           <ListItemIcon>
-            <IconMail width={20} />
+            <IconEdit width={20} />
           </ListItemIcon>
-          <ListItemText>My Account</ListItemText>
-        </MenuItem>
-        <MenuItem>
-          <ListItemIcon>
-            <IconListCheck width={20} />
-          </ListItemIcon>
-          <ListItemText>My Tasks</ListItemText>
+          <ListItemText>Change Password</ListItemText>
         </MenuItem>
         <Box mt={1} py={1} px={2}>
           <Button

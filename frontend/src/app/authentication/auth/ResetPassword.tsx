@@ -1,14 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import CustomTextField from "@/app/(DashboardLayout)/components/forms/theme-elements/CustomTextField";
+import { useRouter } from "next/navigation";
 
 const schema = z
   .object({
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string().min(6, "Confirm Password is required"),
+    password: z
+      .string({ message: "Password is required" })
+      .trim()
+      .min(6, "Password must be at least 6 characters"),
+    confirmPassword: z
+      .string({ message: "Confirm Password is required" })
+      .trim()
+      .min(6, "Confirm Password must be at least 6 characters"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -24,19 +31,27 @@ const ResetPasswordForm = () => {
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = (data: any) => {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const onSubmit = async (data: any) => {
+    setLoading(true);
     console.log(data);
-    // Handle reset password logic here
+    // Simulate reset password logic
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate delay
+    setLoading(false);
+    router.push("/");
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Box>
-        <Typography variant="h5" mb={1}>
-          Reset Password
-        </Typography>
+        <Typography variant="h5">Reset Password</Typography>
         <Typography variant="subtitle2" mb={2}>
           Enter your new password.
+        </Typography>
+        <Typography variant="subtitle1" fontWeight={600}>
+          New Password
         </Typography>
         <Box mb={2}>
           <Controller
@@ -54,6 +69,9 @@ const ResetPasswordForm = () => {
             )}
           />
         </Box>
+        <Typography variant="subtitle1" fontWeight={600}>
+          Confirm Password
+        </Typography>
         <Box mb={2}>
           <Controller
             name="confirmPassword"
@@ -80,8 +98,9 @@ const ResetPasswordForm = () => {
           size="large"
           fullWidth
           type="submit"
+          disabled={loading}
         >
-          Reset Password
+          {loading ? <CircularProgress size={24} /> : "Reset Password"}
         </Button>
       </Box>
     </form>
